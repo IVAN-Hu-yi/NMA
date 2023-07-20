@@ -184,7 +184,7 @@ def plot_electrodes(coords:pd.DataFrame, sbj:str, figsize=(10, 5), dpi=300):
     gs = GridSpec(2, 1, height_ratios=[40, 1])
     ax0 = fig.add_subplot(gs[0])
     ax1 = fig.add_subplot(gs[1])
-    color_map = sns.color_palette("vlag", n_colors=94)
+    color_map = sns.color_palette("vlag", n_colors=coords.shape[0])
     im = plot_connectome(np.eye(coords.shape[0]), coords, title=f'Subject {sbj}', node_color=color_map, axes=ax0)
     ax1.imshow([np.arange(coords.shape[0]) for _ in range(2)], cmap="vlag")
     ax1.set_yticks([])
