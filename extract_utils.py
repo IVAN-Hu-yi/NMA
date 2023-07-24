@@ -201,7 +201,7 @@ def epoching(data, rate=500, epoch=5, max_t = 90):
         relavant behavior data
     rate : int, optional
         sampling rate, by default 500
-    window : int, optional
+    epochl : int, optional
         epoch length, by default 5
     max_t : int, optional
         maximum length for each trial, by default 90 seconds
