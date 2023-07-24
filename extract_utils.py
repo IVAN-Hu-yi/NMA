@@ -62,7 +62,7 @@ def get_nwb(sbj, session):
 
     return nwbfile, fs
 
-def extract_phys_accod_timestamps(phys_data:h5py._hl.dataset.Dataset, behavior_timestamps:pd.DataFrame, trange=list, rate=float):
+def extract_phys_accod_timestamps(phys_data:h5py._hl.dataset.Dataset, behavior_timestamps:pd.DataFrame, trange=list):
 
     """ Return a dictionary that contains EOG/ECG recordings according timestamps
 
@@ -191,3 +191,63 @@ def plot_electrodes(coords:pd.DataFrame, sbj:str, figsize=(10, 5), dpi=300):
     plt.tight_layout()
     
     return fig
+
+def epoching(data, rate=500, epoch=5, max_t = 90):
+    """divide orignial data into epochs with a temporal window
+
+    Parameters
+    ----------
+    data : ndarray
+        relavant behavior data
+    rate : int, optional
+        sampling rate, by default 500
+    window : int, optional
+        epoch length, by default 5
+    max_t : int, optional
+        maximum length for each trial, by default 90 seconds
+
+    Returns
+    -------
+    array: ndarray 
+        with shape (epochLength, Number of Channel, Number of epochs)
+    """
+
+    step = epoch*rate
+    max_idx = max_t*rate
+
+    # epoch data array with epochLength*channel*No.Epoch
+    array = np.zeros((step, data.shape[1], int(max_idx/step))) 
+
+    for i, j in zip(range(0, max_idx, step), range(0, array.shape[2])):
+        array[:, :, j] = data[i:i+step, :]
+    
+    return array
+
+
+def extract_all_recordings(data:h5py._hl.dataset.Dataset, behavior:pd.DataFrame):
+
+    """Return a list of data for a specific behavior over the dataset
+
+    Parameters
+    ----------
+    data : h5py._hl.dataset.Dataset
+        relavant behavior data
+    behavior : pd.DataFrame
+        dataframe with intervals about behaviors
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+
+    nrow = behavior.shape[0]
+    behavior['start_idx'], behavior['stop_idx'] = behavior['start_time']/86400 * 43200000, behavior['stop_time']/86400 * 43200000
+
+    
+    datalist = []
+    for i in range(nrow):
+        start, stop = int(behavior.iloc[i, :]['start_idx']), int(behavior.iloc[i, :]['stop_idx'])
+        datalist.append(data[start:stop, :])
+    return datalist
+    
