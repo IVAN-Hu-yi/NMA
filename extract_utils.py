@@ -137,7 +137,7 @@ def get_epochs(file:pynwb.file.NWBFile, behavior = False):
     ----------
     file : pynwb.file.NWBFile
         An nwbfile containing ECOG recordings
-    behaviour: Bool
+blob:vscode-webview://1tv53gnlu4adb7n6ho58ha7trng4ocphp9ikot02u0l2ifsu4e9g/21dbc982-d254-4f62-87b3-8010aa3a86a8    behaviour: Bool
         if `True`, store epochs for different behavioral type in a dict with key representing behaviour type and value as a dataframe of corresponding epochs
 
     Returns:
