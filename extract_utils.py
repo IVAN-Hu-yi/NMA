@@ -26,6 +26,8 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from nilearn.plotting import plot_connectome
 
+import mne
+
 def get_nwb(sbj, session):
     """ return nwbfile
 
@@ -251,3 +253,55 @@ def extract_all_recordings(data:h5py._hl.dataset.Dataset, behavior:pd.DataFrame)
         datalist.append(data[start:stop, :])
     return datalist
     
+
+def prepare_X_for_dPCA(epochs_behavior:dict, keys:list, goodid:list, returnspect: bool=True, returnfreq: bool=True):
+    """Construct a data matrix prepared for dPCA
+
+    Parameters
+    ----------
+    epochs_behavior : dict
+        Raw data for different behaviors, the value is an ndarray with shape (n_timepoints, n_channel, n_epochs)
+    keys : list
+        a list of activites to be used, the value should be in epochs_behavior.keys()
+    goodid : list
+        a list of ids of electrodes
+    returnspect : bool, optional
+        If `True`, return a list of spectrum via multitapperred transform, by default True
+    returnfreq : bool, optional
+        If `True`, return a list of sampling freqs via multitapperred transform, by default True
+
+    Returns
+    -------
+    X: ndarray
+        shape (n_epochs, n_channel, n_activities)
+    """
+
+    max_n_epoch = min([epochs_behavior[key].shape[-1] for key in keys]) # minimum number of epochs
+    n_channel = epochs_behavior[keys[0]].shape[1] # number of channel
+
+    X = np.empty((max_n_epoch, n_channel, len(keys)))
+
+    spectras, freqs = [], []
+
+    for i, key in enumerate(keys):
+        data = epochs_behavior[key]
+        sampleinfo = mne.create_info([str(id) for id in goodid], 500, 'ecog') 
+        epochObj = mne.EpochsArray(data.T[:max_n_epoch, :, :], info=sampleinfo) 
+        epochSpec = epochObj.compute_psd()
+        spectra, freq = epochSpec.get_data(), epochSpec.freqs # multitappered transform
+        spectras.append(spectra)
+        freqs.append(freq)
+        
+        X[:, :, i] = np.mean(spectra[:, :, 2:16], axis=2) # average mean power across delta band
+
+    if np.logical_xor(returnspect, returnfreq) and returnspect:
+        return X, spectras
+    
+    elif np.logical_xor(returnspect, returnfreq) and returnfreq:
+        return X, freqs
+    
+    elif np.logical_and(returnspect, returnfreq):
+        return X, spectras, freqs
+    
+    else:
+        return X
