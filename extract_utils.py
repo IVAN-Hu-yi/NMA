@@ -279,7 +279,7 @@ def prepare_X_for_dPCA(epochs_behavior:dict, keys:list, goodid:list, returnspect
     max_n_epoch = min([epochs_behavior[key].shape[-1] for key in keys]) # minimum number of epochs
     n_channel = epochs_behavior[keys[0]].shape[1] # number of channel
 
-    X = np.empty((max_n_epoch, n_channel, len(keys)))
+    X = np.empty((max_n_epoch, n_sf, n_channel, len(keys)))
 
     spectras, freqs = [], []
 
