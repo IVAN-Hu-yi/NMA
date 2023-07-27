@@ -279,7 +279,7 @@ def prepare_X_for_dPCA(epochs_behavior:dict, keys:list, goodid:list, returnspect
     max_n_epoch = min([epochs_behavior[key].shape[-1] for key in keys]) # minimum number of epochs
     n_channel = epochs_behavior[keys[0]].shape[1] # number of channel
 
-    X = np.empty((max_n_epoch, n_sf, n_channel, len(keys)))
+    X = np.empty((max_n_epoch, n_channel, len(keys)))
 
     spectras, freqs = [], []
 
@@ -305,3 +305,44 @@ def prepare_X_for_dPCA(epochs_behavior:dict, keys:list, goodid:list, returnspect
     
     else:
         return X
+    
+
+def prepare_X_for_dPCA_withT(epochs_behavior:dict, keys:list, goodid:list, returnOrig: bool=True):
+    """Construct a data matrix prepared for dPCA
+
+    Parameters
+    ----------
+    epochs_behavior : dict
+        Raw data for different behaviors, the value is an ndarray with shape (n_timepoints, n_channel, n_epochs)
+    keys : list
+        a list of activites to be used, the value should be in epochs_behavior.keys()
+    goodid : list
+        a list of ids of electrodes
+    returnOrig : bool, optional
+        If `True`, return original dataset, by default True
+    
+
+    Returns
+    -------
+    X: ndarray
+        shape (n_epochs, n_channel, n_activities, n_timepoints)
+    """
+
+    max_n_epoch = min([epochs_behavior[key].shape[-1] for key in keys]) # minimum number of epochs
+    n_channel, n_time_points = epochs_behavior[keys[0]].shape[1], epochs_behavior[keys[0]].shape[0] # number of channel
+
+    X = np.empty((max_n_epoch, n_channel, n_time_points, len(keys)))
+
+    epochObjs = {}
+
+    for i, key in enumerate(keys):
+        data = epochs_behavior[key]
+        sampleinfo = mne.create_info([str(id) for id in goodid], 500, 'ecog') 
+        epochObj = mne.EpochsArray(data.T[:max_n_epoch, :, :], info=sampleinfo)
+        filtered = epochObj.filter(0.5, 4, method='iir', iir_params=dict(order=4, ftype='butter')).apply_hilbert(envelope=True)
+        epochObjs[key] = epochObj
+        X[:, :, :,i] = filtered.get_data() # LFOs envolope
+    
+    X = X.transpose(0, 1, 3, 2)
+
+    return X, epochObjs
